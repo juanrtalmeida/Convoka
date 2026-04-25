@@ -1,0 +1,17 @@
+{
+  "name": "convoka-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -c \"cyan,magenta\" \"npm run dev -w web\" \"npm run dev -w api\"",
+    "build": "npm run build --workspaces",
+    "lint": "biome lint .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ParticipantStatus {
+  CONFIRMED
+  PENDING
+  WAITLIST
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  passwordHash  String
+  createdAt     DateTime      @default(now())
+  
+  // Relacionamentos
+  createdEvents Convoka[]     @relation("Creator")
+  participations Participant[]
+}
+
+model Convoka {
+  id                        String   @id @default(uuid())
+  title                     String
+  description               String?
+  date                      DateTime
+  location                  String?
+  maxParticipants           Int?
+  allowWaitlist             Boolean  @default(false)
+  requireRoles              Boolean  @default(false)
+  availableRoles            String[] @default([])
+  
+  // Configurações de Pagamento
+  paymentRequired           Boolean  @default(false)
+  allowWaitlistPayment      Boolean  @default(false)
+  allowParticipantPayment   Boolean  @default(true)
+  
+  // Controle
+  creatorId                 String
+  creator                   User     @relation("Creator", fields: [creatorId], references: [id])
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  
+  // Relacionamentos
+  participants              Participant[]
+}
+
+model Participant {
+  id          String            @id @default(uuid())
+  userId      String
+  convokaId   String
+  status      ParticipantStatus
+  roles       String[]          // Ex: ["Goleiro", "Motorista"]
+  hasPaid     Boolean           @default(false)
+  joinedAt    DateTime          @default(now())
+  
+  user        User              @relation(fields: [userId], references: [id])
+  convoka     Convoka           @relation(fields: [convokaId], references: [id])
+  payments    Payment[]
+
+  @@unique([userId, convokaId]) // Usuário não pode participar duas vezes
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  participantId  String
+  amount         Decimal       @db.Decimal(10, 2)
+  method         String        // Ex: PIX, Cartão
+  receiptUrl     String?
+  status         PaymentStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  participant    Participant   @relation(fields: [participantId], references: [id])
+}

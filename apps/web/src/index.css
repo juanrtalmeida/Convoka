@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6C3BFF;
+  --color-primary-light: #8960FF;
+  --color-primary-dark: #4A1BD4;
+  --color-accent: #3BA7FF;
+  --color-background-dark: #0F172A;
+  --color-background-card: #1E293B;
+  
+  /* Font Families - Modern Google Fonts requested (Inter) */
+  --font-sans: "Inter", "Roboto", "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --border: #e2e8f0;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply antialiased transition-colors duration-300;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Base Utilities para microinterações e sombras suaves */
+@layer utilities {
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 dark:bg-black/10 dark:border-white/10;
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+}
