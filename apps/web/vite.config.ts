@@ -7,13 +7,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
-    server: {
-      proxy: {
-        '/api': {
-          target: env.VITE_API_URL || 'http://localhost:8787',
-          changeOrigin: true,
-        },
-      },
-    },
+
   };
 });
