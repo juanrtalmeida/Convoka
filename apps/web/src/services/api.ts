@@ -15,6 +15,6 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   });
 };
 
-export const apiClient = hc<AppType>('/', {
+export const apiClient = hc<AppType>(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
   fetch: customFetch,
 });
