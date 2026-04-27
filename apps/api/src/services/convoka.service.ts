@@ -59,6 +59,15 @@ export class ConvokaService {
           },
           orderBy: { joinedAt: 'asc' },
         },
+        teams: {
+          include: {
+            participants: {
+              include: {
+                user: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
         creator: {
           select: { id: true, name: true },
         },

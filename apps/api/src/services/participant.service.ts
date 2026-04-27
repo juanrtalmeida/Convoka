@@ -141,4 +141,40 @@ export class ParticipantService {
     participantEvents.emit('update', convokaId);
     return result;
   }
+
+  static async updateSkillLevel(
+    convokaId: string,
+    requesterId: string,
+    targetUserId: string,
+    skillLevel: number
+  ) {
+    try {
+      const convoka = await prisma.convoka.findUnique({
+        where: { id: convokaId },
+      });
+
+      if (!convoka || convoka.creatorId !== requesterId) {
+        throw new Error('Apenas o criador do evento pode alterar os níveis de habilidade');
+      }
+
+      const participant = await prisma.participant.update({
+        where: {
+          userId_convokaId: {
+            userId: targetUserId,
+            convokaId,
+          },
+        },
+        data: {
+          skillLevel,
+        },
+        include: { user: true },
+      });
+
+      participantEvents.emit('update', convokaId);
+      return participant;
+    } catch (error: unknown) {
+      console.error(`[updateSkillLevel] Erro:`, error);
+      throw error;
+    }
+  }
 }

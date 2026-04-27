@@ -30,6 +30,13 @@ export const manageParticipantSchema = z.object({
     action: z.enum(['UPDATE_PAYMENT', 'MOVE_TO_WAITLIST', 'MOVE_TO_CONFIRMED', 'REMOVE']),
     hasPaid: z.boolean().optional(),
 });
+export const updateSkillSchema = z.object({
+    skillLevel: z.number().int().min(1).max(100),
+});
+export const generateTeamsSchema = z.object({
+    numberOfTeams: z.number().int().min(2),
+    roleRequirements: z.record(z.string(), z.number().int().min(0)).optional(), // Ex: { "Goleiro": 1 }
+});
 export const createPaymentSchema = z.object({
     participantId: z.string().uuid(),
     amount: z.number().positive(),

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { ParticipantService } from '../services/participant.service';
-import { joinConvokaSchema, manageParticipantSchema } from '../schemas';
+import { joinConvokaSchema, manageParticipantSchema, updateSkillSchema } from '../schemas';
 import { authMiddleware } from '../middlewares/auth.middleware';
 const app = new Hono()
     .post('/:convokaId/join', authMiddleware, zValidator('json', joinConvokaSchema), async (c) => {
@@ -13,7 +13,7 @@ const app = new Hono()
         return c.json({ participant }, 200);
     }
     catch (e) {
-        return c.json({ error: e.message }, 400);
+        return c.json({ error: e instanceof Error ? e.message : 'Erro desconhecido' }, 400);
     }
 })
     .post('/:convokaId/leave', authMiddleware, async (c) => {
@@ -24,7 +24,7 @@ const app = new Hono()
         return c.json({ participant }, 200);
     }
     catch (e) {
-        return c.json({ error: e.message }, 400);
+        return c.json({ error: e instanceof Error ? e.message : 'Erro desconhecido' }, 400);
     }
 })
     .patch('/:convokaId/manage/:userId', authMiddleware, zValidator('json', manageParticipantSchema), async (c) => {
@@ -37,7 +37,20 @@ const app = new Hono()
         return c.json({ participant }, 200);
     }
     catch (e) {
-        return c.json({ error: e.message }, 400);
+        return c.json({ error: e instanceof Error ? e.message : 'Erro desconhecido' }, 400);
+    }
+})
+    .patch('/:convokaId/skill/:userId', authMiddleware, zValidator('json', updateSkillSchema), async (c) => {
+    try {
+        const convokaId = c.req.param('convokaId');
+        const targetUserId = c.req.param('userId');
+        const data = c.req.valid('json');
+        const user = c.get('jwtPayload');
+        const participant = await ParticipantService.updateSkillLevel(convokaId, user.sub, targetUserId, data.skillLevel);
+        return c.json({ participant }, 200);
+    }
+    catch (e) {
+        return c.json({ error: e instanceof Error ? e.message : 'Erro desconhecido' }, 400);
     }
 });
 export default app;

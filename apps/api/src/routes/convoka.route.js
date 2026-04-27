@@ -33,7 +33,7 @@ const app = new Hono()
         return c.json({ convoka }, 201);
     }
     catch (e) {
-        return c.json({ error: e.message }, 400);
+        return c.json({ error: e instanceof Error ? e.message : 'Erro desconhecido' }, 400);
     }
 })
     .get('/:id/stream', async (c) => {

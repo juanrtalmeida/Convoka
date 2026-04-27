@@ -16,8 +16,8 @@ const app = new Hono()
         const token = await sign(payload, secret);
         return c.json({ user, token }, 201);
     }
-    catch (e) {
-        return c.json({ error: e.message }, 400);
+    catch (error) {
+        return c.json({ error: error instanceof Error ? error.message : 'Erro desconhecido' }, 400);
     }
 })
     .post('/login', zValidator('json', loginSchema), async (c) => {
@@ -32,8 +32,8 @@ const app = new Hono()
         const token = await sign(payload, secret);
         return c.json({ user, token }, 200);
     }
-    catch (e) {
-        return c.json({ error: e.message }, 401);
+    catch (error) {
+        return c.json({ error: error instanceof Error ? error.message : 'Erro desconhecido' }, 401);
     }
 });
 export default app;

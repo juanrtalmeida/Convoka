@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import authRoute from './routes/auth.route';
 import convokaRoute from './routes/convoka.route';
 import participantRoute from './routes/participant.route';
+import teamRoute from './routes/team.route';
 
 const app = new Hono().basePath('/api');
 
@@ -18,7 +19,8 @@ app.use('*', cors({
 const routes = app
   .route('/auth', authRoute)
   .route('/convokas', convokaRoute)
-  .route('/participants', participantRoute);
+  .route('/participants', participantRoute)
+  .route('/teams', teamRoute);
 
 export type AppType = typeof routes;
 

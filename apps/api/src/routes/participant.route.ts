@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { ParticipantService } from '../services/participant.service';
-import { joinConvokaSchema, manageParticipantSchema } from '../schemas';
+import { joinConvokaSchema, manageParticipantSchema, updateSkillSchema } from '../schemas';
 import { authMiddleware, type JwtPayload } from '../middlewares/auth.middleware';
 
 const app = new Hono()
@@ -40,6 +40,25 @@ const app = new Hono()
         targetUserId,
         data.action,
         data.hasPaid
+      );
+
+      return c.json({ participant }, 200);
+    } catch (e: unknown) {
+      return c.json({ error: e instanceof Error ? e.message : 'Erro desconhecido' }, 400);
+    }
+  })
+  .patch('/:convokaId/skill/:userId', authMiddleware, zValidator('json', updateSkillSchema), async (c) => {
+    try {
+      const convokaId = c.req.param('convokaId');
+      const targetUserId = c.req.param('userId');
+      const data = c.req.valid('json');
+      const user = c.get('jwtPayload') as JwtPayload;
+
+      const participant = await ParticipantService.updateSkillLevel(
+        convokaId,
+        user.sub,
+        targetUserId,
+        data.skillLevel
       );
 
       return c.json({ participant }, 200);
