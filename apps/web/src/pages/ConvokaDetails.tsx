@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../services/api';
+import { GenerateTeamsModal } from '../components/modals/GenerateTeamsModal';
 
 interface ParticipantType {
   id: string;
@@ -15,7 +16,14 @@ interface ParticipantType {
   status: string;
   roles: string[];
   hasPaid: boolean;
+  skillLevel: number;
   user?: { name: string };
+}
+
+interface TeamType {
+  id: string;
+  name: string;
+  participants: ParticipantType[];
 }
 
 interface ConvokaType {
@@ -34,6 +42,7 @@ interface ConvokaType {
   creatorId: string;
   creator?: { name: string };
   participants: ParticipantType[];
+  teams: TeamType[];
 }
 
 export function ConvokaDetails() {
@@ -42,6 +51,7 @@ export function ConvokaDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   const {
     data: convokaData,
@@ -145,6 +155,37 @@ export function ConvokaDetails() {
       eventSource.close();
     };
   }, [id, queryClient]);
+
+  const updateSkillMutation = useMutation({
+    mutationFn: async ({ userId, skillLevel }: { userId: string; skillLevel: number }) => {
+      if (!id) throw new Error('ID não fornecido');
+      const res = await apiClient.api.participants[':convokaId'].skill[':userId'].$patch({
+        param: { convokaId: id, userId },
+        json: { skillLevel },
+      });
+      if (!res.ok) throw new Error('Erro ao atualizar habilidade');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['convoka', id] });
+    },
+  });
+
+  const generateTeamsMutation = useMutation({
+    mutationFn: async (config: { numberOfTeams: number; roleRequirements: Record<string, number> }) => {
+      if (!id) throw new Error('ID não fornecido');
+      const res = await apiClient.api.teams[':convokaId'].generate.$post({
+        param: { convokaId: id },
+        json: config,
+      });
+      if (!res.ok) throw new Error('Erro ao gerar times');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['convoka', id] });
+      setIsGenerateModalOpen(false);
+    },
+  });
 
   if (isLoading) {
     return (
@@ -382,6 +423,11 @@ export function ConvokaDetails() {
             {manageMutation.isPending && (
               <span className="text-sm text-primary animate-pulse">Atualizando...</span>
             )}
+            {isCreator && participantsCount > 0 && (
+              <Button onClick={() => setIsGenerateModalOpen(true)} size="sm">
+                Gerar Times
+              </Button>
+            )}
           </div>
 
           {participantsCount === 0 ? (
@@ -439,6 +485,22 @@ export function ConvokaDetails() {
 
                       {isCreator && (
                         <div className="mt-3 flex flex-col gap-1 w-full">
+                          <div className="w-full text-left bg-slate-50 p-1.5 rounded border border-slate-100 mb-1">
+                            <label className="text-[9px] text-slate-500 font-bold uppercase block mb-1">Nível de Hab. (1-100)</label>
+                            <input 
+                              type="number" 
+                              min="1" max="100" 
+                              defaultValue={p.skillLevel}
+                              onBlur={(e) => {
+                                const val = Number(e.target.value);
+                                if (val >= 1 && val <= 100 && val !== p.skillLevel) {
+                                  updateSkillMutation.mutate({ userId: p.userId, skillLevel: val });
+                                }
+                              }}
+                              className="w-full text-xs px-2 py-1 border border-slate-200 rounded focus:border-primary outline-none"
+                            />
+                          </div>
+                          
                           {c.paymentRequired && (
                             <button
                               onClick={() =>
@@ -485,6 +547,46 @@ export function ConvokaDetails() {
             </div>
           )}
         </section>
+
+        {c.teams && c.teams.length > 0 && (
+          <section className="pt-8">
+            <h3 className="font-bold text-xl mb-6 flex items-center gap-2">
+              🏆 Times Formados
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {c.teams.map((team: TeamType) => {
+                const totalSkill = team.participants.reduce((acc, p) => acc + p.skillLevel, 0);
+                return (
+                  <Card key={team.id} className="border-primary/20 bg-primary/5">
+                    <div className="p-4 border-b border-primary/10 flex justify-between items-center bg-white rounded-t-xl">
+                      <h4 className="font-bold text-lg text-primary">{team.name}</h4>
+                      <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-1 rounded-full">
+                        {team.participants.length} Jogadores
+                      </span>
+                    </div>
+                    <div className="p-4 flex flex-col gap-3">
+                      {team.participants.map(p => (
+                        <div key={p.id} className="flex justify-between items-center bg-white p-2 rounded border border-slate-100 shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{p.user?.name}</span>
+                            {p.roles?.length > 0 && (
+                              <span className="text-[10px] text-slate-500">({p.roles[0]})</span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-400">Nv. {p.skillLevel}</span>
+                        </div>
+                      ))}
+                      <div className="mt-2 pt-2 border-t border-primary/10 flex justify-between items-center">
+                        <span className="text-xs font-medium text-slate-500">Poder Total</span>
+                        <span className="font-bold text-primary">{totalSkill}</span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {waitlistParticipants.length > 0 && (
           <section className="pt-8">
@@ -546,6 +648,15 @@ export function ConvokaDetails() {
           </section>
         )}
       </main>
+
+      <GenerateTeamsModal
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+        onGenerate={(config) => generateTeamsMutation.mutate(config)}
+        availableRoles={c.availableRoles}
+        totalParticipants={confirmedParticipants.length}
+        loading={generateTeamsMutation.isPending}
+      />
     </div>
   );
 }
