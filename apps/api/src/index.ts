@@ -17,6 +17,9 @@ app.use('*', cors({
 
 // Agrupamento de rotas para exportar os tipos de RPC
 const routes = app
+  .get('/health', async (c) => {
+    return c.json({ status: 'ok' });
+  })
   .route('/auth', authRoute)
   .route('/convokas', convokaRoute)
   .route('/participants', participantRoute)
