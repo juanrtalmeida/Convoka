@@ -8,5 +8,6 @@ console.log(`🚀 Servidor Node.js rodando em http://localhost:${port}`);
 
 serve({
   fetch: app.fetch,
-  port
+  port,
+  hostname: '0.0.0.0'
 });
